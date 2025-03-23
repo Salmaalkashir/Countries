@@ -53,11 +53,6 @@
 			path = CountriesTests;
 			sourceTree = "<group>";
 		};
-		E1CBF4612D90A91A00DA183E /* CountriesUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CountriesUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,7 +85,6 @@
 			children = (
 				E1CBF43D2D90A91800DA183E /* Countries */,
 				E1CBF4572D90A91A00DA183E /* CountriesTests */,
-				E1CBF4612D90A91A00DA183E /* CountriesUITests */,
 				E1CBF43C2D90A91800DA183E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,9 +159,6 @@
 			);
 			dependencies = (
 				E1CBF4602D90A91A00DA183E /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				E1CBF4612D90A91A00DA183E /* CountriesUITests */,
 			);
 			name = CountriesUITests;
 			packageProductDependencies = (
