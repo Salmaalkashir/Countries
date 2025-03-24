@@ -53,7 +53,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func openInitialScreen(scene: UIWindowScene) {
         let window = UIWindow(windowScene: scene)
-        let vc = HomeViewController()
+        let countries = CountriesRemoteLoader()
+        let repo = Repository(dataSource: countries)
+        let vm = HomeViewModel(repository: repo)
+        let vc = HomeViewController(viewModel: vm)
         let navigation = UINavigationController(rootViewController: vc)
         window.rootViewController = navigation
         self.window = window
