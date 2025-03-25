@@ -15,6 +15,8 @@ class CountriesCollectionViewCell: UICollectionViewCell {
   @IBOutlet private weak var countryName: UILabel!
   @IBOutlet private weak var deleteButton: UIButton!
   
+  var deleteTapped: (()->())?
+  
   override func awakeFromNib() {
     super.awakeFromNib()
     countryImage.layer.cornerRadius = 10
@@ -22,7 +24,7 @@ class CountriesCollectionViewCell: UICollectionViewCell {
   }
   
   @IBAction func deleteCountry(_ sender: UIButton) {
-    print("DELETE")
+    deleteTapped?()
   }
   
   func configureCell(image: String, name: String, indexPath: Int) {

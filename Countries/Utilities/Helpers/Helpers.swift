@@ -30,4 +30,24 @@ class Helpers {
       toastLabel.removeFromSuperview()
     }
   }
+  
+  
+  static func convertStringToData(image: String, completion: @escaping (Data?) -> Void) {
+    if let url = URL(string: image) {
+      DispatchQueue.global(qos: .userInitiated).async {
+        do {
+          let data = try Data(contentsOf: url)
+          DispatchQueue.main.async {
+            completion(data)
+          }
+        } catch {
+          DispatchQueue.main.async {
+            completion(nil)
+          }
+        }
+      }
+    } else {
+      completion(nil)
+    }
+  }
 }

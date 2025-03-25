@@ -2,7 +2,9 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
+        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -11,7 +13,8 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="HomeViewController" customModule="Countries" customModuleProvider="target">
             <connections>
                 <outlet property="addedCountriesCollectionView" destination="EBP-3R-Tzs" id="8q0-1t-gMo"/>
-                <outlet property="countriesTableView" destination="fNs-EQ-bRH" id="HAo-7l-DAj"/>
+                <outlet property="countriesTableView" destination="kAo-OA-NZi" id="vdz-Kb-eas"/>
+                <outlet property="dismissSearchButton" destination="pGA-7U-bLx" id="IFw-Bd-EWf"/>
                 <outlet property="loadingIndicator" destination="ayJ-Jq-2Rq" id="BLB-5d-yY5"/>
                 <outlet property="searchCountriesTextField" destination="juy-sm-K91" id="ok5-bX-9Vk"/>
                 <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
@@ -22,6 +25,10 @@
             <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WKE-Nx-89V">
+                    <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                </view>
                 <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Search for countries" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="juy-sm-K91">
                     <rect key="frame" x="16" y="91" width="361" height="55"/>
                     <constraints>
@@ -33,7 +40,7 @@
                         <action selector="searchTextFieldTapped:" destination="-1" eventType="editingDidBegin" id="Y0s-hT-ZgD"/>
                     </connections>
                 </textField>
-                <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="none" translatesAutoresizingMaskIntoConstraints="NO" id="EBP-3R-Tzs">
+                <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" indicatorStyle="white" dataMode="none" translatesAutoresizingMaskIntoConstraints="NO" id="EBP-3R-Tzs">
                     <rect key="frame" x="16" y="170" width="361" height="624"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="Sv8-YY-TzH">
@@ -46,10 +53,25 @@
                 <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="ayJ-Jq-2Rq">
                     <rect key="frame" x="178" y="407.66666666666669" width="37" height="37"/>
                 </activityIndicatorView>
-                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" indicatorStyle="white" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="fNs-EQ-bRH">
-                    <rect key="frame" x="16" y="170" width="361" height="624"/>
+                <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="kAo-OA-NZi">
+                    <rect key="frame" x="16" y="198" width="361" height="596"/>
                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                 </tableView>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="pGA-7U-bLx">
+                    <rect key="frame" x="357" y="162" width="20" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="20" id="alg-ci-RsK"/>
+                        <constraint firstAttribute="height" constant="20" id="iSp-OD-mnd"/>
+                    </constraints>
+                    <state key="normal" title="Button"/>
+                    <buttonConfiguration key="configuration" style="plain">
+                        <imageReference key="image" image="xmark.circle" catalog="system" symbolScale="large"/>
+                        <color key="baseForegroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </buttonConfiguration>
+                    <connections>
+                        <action selector="dismissTapped:" destination="-1" eventType="touchUpInside" id="47Z-4z-Git"/>
+                    </connections>
+                </button>
             </subviews>
             <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -58,20 +80,27 @@
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="EBP-3R-Tzs" secondAttribute="trailing" constant="16" id="3Ev-uI-0pa"/>
                 <constraint firstItem="EBP-3R-Tzs" firstAttribute="top" secondItem="juy-sm-K91" secondAttribute="bottom" constant="24" id="3Q9-ka-ENY"/>
                 <constraint firstItem="ayJ-Jq-2Rq" firstAttribute="centerX" secondItem="i5M-Pr-FkT" secondAttribute="centerX" id="4cD-KT-xNn"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="kAo-OA-NZi" secondAttribute="trailing" constant="16" id="4zP-dt-b1Y"/>
+                <constraint firstItem="pGA-7U-bLx" firstAttribute="top" secondItem="juy-sm-K91" secondAttribute="bottom" constant="16" id="EJf-wF-Lvx"/>
+                <constraint firstItem="WKE-Nx-89V" firstAttribute="leading" secondItem="i5M-Pr-FkT" secondAttribute="leading" id="P8a-3k-8Z2"/>
                 <constraint firstItem="juy-sm-K91" firstAttribute="top" secondItem="fnl-2z-Ty3" secondAttribute="top" constant="32" id="PEN-os-c0q"/>
+                <constraint firstItem="kAo-OA-NZi" firstAttribute="top" secondItem="pGA-7U-bLx" secondAttribute="bottom" constant="16" id="RvQ-vx-qd1"/>
+                <constraint firstItem="WKE-Nx-89V" firstAttribute="top" secondItem="i5M-Pr-FkT" secondAttribute="top" id="Tyd-GB-jY9"/>
                 <constraint firstItem="ayJ-Jq-2Rq" firstAttribute="centerY" secondItem="i5M-Pr-FkT" secondAttribute="centerY" id="W47-hb-Iuv"/>
-                <constraint firstItem="fNs-EQ-bRH" firstAttribute="top" secondItem="juy-sm-K91" secondAttribute="bottom" constant="24" id="eB5-2P-Jcc"/>
+                <constraint firstAttribute="bottom" secondItem="WKE-Nx-89V" secondAttribute="bottom" id="ZHD-2G-bDt"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="pGA-7U-bLx" secondAttribute="trailing" constant="16" id="cOB-12-ZV7"/>
                 <constraint firstItem="EBP-3R-Tzs" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="16" id="euP-ne-DEk"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="juy-sm-K91" secondAttribute="trailing" constant="16" id="fto-xo-wTK"/>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="kAo-OA-NZi" secondAttribute="bottom" constant="24" id="iCI-cO-oBa"/>
                 <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="EBP-3R-Tzs" secondAttribute="bottom" constant="24" id="kV1-1Y-qkx"/>
-                <constraint firstItem="fNs-EQ-bRH" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="16" id="q0S-nh-4C4"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="bottom" secondItem="fNs-EQ-bRH" secondAttribute="bottom" constant="24" id="qoW-cI-gdI"/>
-                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="fNs-EQ-bRH" secondAttribute="trailing" constant="16" id="tbR-vA-yb8"/>
+                <constraint firstItem="kAo-OA-NZi" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="16" id="lhf-94-k3s"/>
+                <constraint firstAttribute="trailing" secondItem="WKE-Nx-89V" secondAttribute="trailing" id="r9u-N5-AdN"/>
             </constraints>
             <point key="canvasLocation" x="-77.099236641221367" y="19.718309859154932"/>
         </view>
     </objects>
     <resources>
+        <image name="xmark.circle" catalog="system" width="128" height="123"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

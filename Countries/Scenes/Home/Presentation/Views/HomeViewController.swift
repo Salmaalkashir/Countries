@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreLocation
+import SwiftUI
 
 class HomeViewController: UIViewController {
   //MARK: - IBOutlets
@@ -14,6 +15,7 @@ class HomeViewController: UIViewController {
   @IBOutlet private weak var addedCountriesCollectionView: UICollectionView!
   @IBOutlet private weak var loadingIndicator: UIActivityIndicatorView!
   @IBOutlet private weak var countriesTableView: UITableView!
+  @IBOutlet private weak var dismissSearchButton: UIButton!
   
   //MARK: - Properties
   private let viewModel: HomeViewModel
@@ -26,6 +28,12 @@ class HomeViewController: UIViewController {
     super.viewDidLoad()
     configureViews()
     bindData()
+  }
+  
+  override func viewWillAppear(_ animated: Bool) {
+    countriesTableView.isHidden = true
+    dismissSearchButton.isHidden = true
+    addedCountriesCollectionView.isHidden = false
   }
   
   //MARK: - Initializer
@@ -46,7 +54,7 @@ class HomeViewController: UIViewController {
         self?.loadingIndicator.stopAnimating()
         self?.myCountry = self?.viewModel.getMyCountry()
         if let country = self?.myCountry {
-            self?.addedCountries.append(country)
+          self?.addedCountries.append(country)
         }
         self?.addedCountriesCollectionView.reloadData()
         self?.countriesTableView.reloadData()
@@ -68,7 +76,7 @@ class HomeViewController: UIViewController {
     searchCountriesTextField.stylingTextField()
     searchCountriesTextField.setView(image: UIImage(systemName: "magnifyingglass") ?? UIImage())
     searchCountriesTextField.customizedPlaceholder()
-        
+    
     LocationManager.shared.onLocationUpdate = { coordinates in
       LocationManager.shared.getCountryCode(from: coordinates.latitude, longitude: coordinates.longitude) { countryCode in
         if let code = countryCode {
@@ -79,7 +87,7 @@ class HomeViewController: UIViewController {
         }
       }
     }
-
+    
     LocationManager.shared.onAuthorizationChange = { status in
       switch status {
       case .authorizedWhenInUse, .authorizedAlways:
@@ -87,7 +95,7 @@ class HomeViewController: UIViewController {
       case .denied, .restricted:
         print("Location access denied")
         if let countryCode = Locale.current.region?.identifier {
-
+          
           UserDefaults.standard.set(countryCode, forKey: "countryCode")
           self.viewModel.getCountries()
           print("Device Country Code Home: \(countryCode)")
@@ -99,7 +107,7 @@ class HomeViewController: UIViewController {
       }
     }
     LocationManager.shared.requestLocationPermission()
-
+    
     addedCountriesCollectionView.delegate = self
     addedCountriesCollectionView.dataSource = self
     let nib = UINib(nibName: "CountriesCollectionViewCell", bundle: nil)
@@ -110,16 +118,23 @@ class HomeViewController: UIViewController {
     countriesTableView.dataSource = self
     countriesTableView.delegate = self
     countriesTableView.isHidden = true
-    
-    //hideKeyboardWhenTappedAround()
+    dismissSearchButton.isHidden = true
+    hideKeyboardWhenTappedAround()
   }
 }
-
 
 //MARK: - IBActions
 private extension HomeViewController {
   @IBAction func searchTextFieldTapped(_ sender: UITextField) {
     countriesTableView.isHidden = false
+    addedCountriesCollectionView.isHidden = true
+    dismissSearchButton.isHidden = false
+  }
+  
+  @IBAction func dismissTapped(_ sender: UIButton) {
+    countriesTableView.isHidden = true
+    addedCountriesCollectionView.isHidden = false
+    dismissSearchButton.isHidden = true
   }
 }
 
@@ -131,9 +146,16 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
   
   func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     let cell  = collectionView.dequeueReusableCell(withReuseIdentifier: "countries", for: indexPath) as! CountriesCollectionViewCell
-    cell.configureCell(image: myCountry?.flags?.png ?? "", name: myCountry?.name ?? "", indexPath: indexPath.row)
+    cell.configureCell(image: addedCountries[indexPath.row].flags?.png ?? "", name: addedCountries[indexPath.row].name ?? "", indexPath: indexPath.row)
+    cell.deleteTapped = { [weak self] in
+      self?.showAlert(on: self, title: "Are you sure?", subTitle: "are you sure you want to unpin this country") { _ in
+        self?.addedCountries.remove(at: indexPath.row)
+        self?.addedCountriesCollectionView.reloadData()
+      }
+    }
     return cell
   }
+  
   func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
     let numberOfItemsPerRow: CGFloat = 2
     let totalSpacing = (numberOfItemsPerRow - 1) * 8
@@ -158,6 +180,26 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     return cell
   }
   
+  func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+      let country = filteredCountries[indexPath.row]
+      let countryDetails = UIHostingController(rootView: CountryDetailsView(
+          country: country,
+          onAddCountry: { [weak self] newCountry in
+            if (self?.addedCountries.contains(where: { $0.name == newCountry.name }) ?? false) {
+                print("Country already added")
+            }else {
+              if self?.addedCountries.count ?? 0 == 5 {
+                print("Exceeded Limit")
+              }else {
+                self?.addedCountries.append(newCountry)
+                self?.addedCountriesCollectionView.reloadData()
+              }
+            }
+          }
+      ))
+      navigationController?.pushViewController(countryDetails, animated: true)
+  }
+
   func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
     return 90
   }
@@ -167,7 +209,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 extension HomeViewController: UITextFieldDelegate {
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {
     searchCountriesTextField.resignFirstResponder()
-   // countriesTableView.isHidden = true
+    countriesTableView.isHidden = true
     return true
   }
   

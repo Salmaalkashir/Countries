@@ -29,12 +29,10 @@ class HomeViewModel {
       switch result {
       case .success(let success):
         self?.retrievedCountries = success
-        // print("SUCC:\(success)")
         
       case .failure(let error):
         print("ERR:\(error)")
         self?.bindFailure?(error)
-        //print("ERRROOR:\(error)")
       }
     }
   }
