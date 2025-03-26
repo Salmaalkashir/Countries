@@ -19,7 +19,6 @@ final class CountriesRemoteLoader: CountriesLoader {
     self.session = session
   }
   
-  
   func fetchCountries(completion: @escaping Completion<[CountryModel]>) {
     guard let url = URL(string: "https://restcountries.com/v2/all") else {
       completion(.failure(NetworkError.invalidURL))
@@ -30,9 +29,24 @@ final class CountriesRemoteLoader: CountriesLoader {
     request.httpMethod = "GET"
     
     let task = URLSession.shared.dataTask(with: request) { data, response, error in
-      if let error = error {
-        completion(.failure(NetworkError.requestFailed(error)))
-        return
+      if let error = error as NSError? {
+        switch error.code {
+        case NSURLErrorNotConnectedToInternet:
+          print("Internet connection appears to be offline.")
+          completion(.failure(.internetIssue))
+          return
+        case NSURLErrorTimedOut:
+          print("Request timed out.")
+          completion(.failure(.internetIssue))
+          return
+        case NSURLErrorNetworkConnectionLost:
+          print("Network connection was lost.")
+          completion(.failure(.internetIssue))
+          return
+        default:
+          completion(.failure(.requestFailed))
+          return
+        }
       }
       
       guard let httpResponse = response as? HTTPURLResponse else {
@@ -62,20 +76,37 @@ final class CountriesRemoteLoader: CountriesLoader {
   }
 }
 
-public enum NetworkError: Error {
-  case invalidURL
-  case requestFailed(Error)
-  case invalidResponse
-  case noData
-  case httpError(statusCode: Int)
-  case decodingFailed(Error)
-  
+public enum NetworkError: Error, Equatable {
+    case invalidResponse
+    case invalidURL
+    case requestFailed
+    case decodingFailed(Error)
+    case internetIssue
+    case noData
+    case httpError(statusCode: Int)
+
+    public static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidResponse, .invalidResponse),
+             (.invalidURL, .invalidURL),
+             (.requestFailed, .requestFailed),
+          (.internetIssue, .internetIssue):
+            return true
+        case let (.httpError(code1), .httpError(code2)):
+            return code1 == code2
+        case let (.decodingFailed(error1), .decodingFailed(error2)):
+            return (error1 as NSError).domain == (error2 as NSError).domain
+        default:
+            return false
+        }
+    }
+
   var localizedDescription: String {
     switch self {
     case .invalidURL:
       return "The URL provided is invalid."
-    case .requestFailed(let error):
-      return "The request failed with error: \(error.localizedDescription)"
+    case .requestFailed:
+      return "The request failed with error"
     case .invalidResponse:
       return "Received an invalid response from the server."
     case .noData:
@@ -84,9 +115,10 @@ public enum NetworkError: Error {
       return "Received an HTTP error with status code: \(statusCode)"
     case .decodingFailed:
       return "Failed to decode response"
+    case .internetIssue:
+      return "Network Connection error"
     }
   }
 }
-
 
 public typealias Completion<T> = (_ result: Result<T, NetworkError>) -> Void

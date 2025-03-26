@@ -48,7 +48,14 @@ struct CountryDetailsView: View {
           .shadow(radius: 3)
         
         HStack {
-          Text ("Population: \(country.population ?? 0)")
+          Text ("Population: \(country.population ?? 0)  people")
+            .frame(maxWidth: fullWidth - 20, maxHeight: 100)
+            .font(.system(size: 20, weight: .semibold))
+        }.background(Color.white)
+          .cornerRadius(10)
+          .shadow(radius: 3)
+        HStack {
+          Text ("Region: \(country.region ?? "")")
             .frame(maxWidth: fullWidth - 20, maxHeight: 100)
             .font(.system(size: 20, weight: .semibold))
         }.background(Color.white)

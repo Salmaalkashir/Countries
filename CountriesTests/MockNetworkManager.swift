@@ -8,7 +8,8 @@
 import Foundation
 @testable import Countries
 class MockCountriesLoader: CountriesLoader {
-     let mockResponse: String = """
+  var shouldFail = false
+  var mockResponse: String = """
     [
         {
             "name": "Afghanistan",
@@ -27,15 +28,21 @@ class MockCountriesLoader: CountriesLoader {
             "flag": "https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg"
         }
     ]
-    """
-
-    func fetchCountries(completion: @escaping Completion<[CountryModel]>) {
-        let data = Data(mockResponse.utf8)
-        do {
-            let countries = try JSONDecoder().decode([CountryModel].self, from: data)
-            completion(.success(countries))
-        } catch {
-            completion(.failure(NetworkError.decodingFailed(error)))
-        }
+    """ 
+  
+  func fetchCountries(completion: @escaping Completion<[CountryModel]>) {
+    if shouldFail {
+      completion(.failure(NetworkError.invalidResponse))
+      return
     }
+    
+    let data = Data(mockResponse.utf8)
+    do {
+      let countries = try JSONDecoder().decode([CountryModel].self, from: data)
+      completion(.success(countries))
+    } catch {
+      completion(.failure(NetworkError.decodingFailed(error)))
+    }
+  }
 }
+

@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import CoreLocation
 import SwiftUI
 
 class HomeViewController: UIViewController {
@@ -18,10 +17,7 @@ class HomeViewController: UIViewController {
   @IBOutlet private weak var dismissSearchButton: UIButton!
   
   //MARK: - Properties
-  private let viewModel: HomeViewModel
-  private var myCountry: CountryModel? = nil
-  private var addedCountries: [CountryModel] = []
-  private var filteredCountries: [CountryModel] = []
+  private var viewModel: HomeViewModelProtocol
   
   //MARK: - Life Cycle
   override func viewDidLoad() {
@@ -31,9 +27,7 @@ class HomeViewController: UIViewController {
   }
   
   override func viewWillAppear(_ animated: Bool) {
-    countriesTableView.isHidden = true
-    dismissSearchButton.isHidden = true
-    addedCountriesCollectionView.isHidden = false
+    updateUIVisibility()
   }
   
   //MARK: - Initializer
@@ -50,11 +44,11 @@ class HomeViewController: UIViewController {
   private func bindData() {
     viewModel.bindCountries = { [weak self] in
       DispatchQueue.main.async {
-        self?.filteredCountries = self?.viewModel.retrievedCountries ?? []
+        self?.viewModel.filteredCountries = self?.viewModel.retrievedCountries ?? []
         self?.loadingIndicator.stopAnimating()
-        self?.myCountry = self?.viewModel.getMyCountry()
-        if let country = self?.myCountry {
-          self?.addedCountries.append(country)
+        self?.viewModel.myCountryRemote = self?.viewModel.getMyCountry()
+        if let country = self?.viewModel.myCountryRemote {
+          self?.viewModel.addedCountries.append(country)
         }
         self?.addedCountriesCollectionView.reloadData()
         self?.countriesTableView.reloadData()
@@ -64,6 +58,16 @@ class HomeViewController: UIViewController {
     viewModel.bindFailure = {  error in
       DispatchQueue.main.async {
         self.loadingIndicator.stopAnimating()
+        if error == .internetIssue {
+          self.viewModel.isOffline = true
+          self.viewModel.myCountryCoreData = self.viewModel.getMyCountryFromCoreData()
+          if let country = self.viewModel.myCountryCoreData {
+            self.viewModel.coreDataAddedCountries.append(country)
+          }
+          self.viewModel.filteredCoreDataCountries = self.viewModel.retrieveCountriesFromCoreData()
+          self.addedCountriesCollectionView.reloadData()
+          self.countriesTableView.reloadData()
+        }
         Helpers.showToastMessage(in: self.view, message:"\(error.localizedDescription)", color: .red, x: (self.view.bounds.size.width - 280) / 2, y: self.view.bounds.size.height - 140 - 30, labelHeight: 50, labelWidth: 280, textColor: .white)
       }
     }
@@ -72,57 +76,47 @@ class HomeViewController: UIViewController {
   //MARK: - Configure Views
   private func configureViews() {
     loadingIndicator.startAnimating()
+    setupTableView()
+    setupCollectionView()
+    setupLocationManager()
     searchCountriesTextField.delegate = self
     searchCountriesTextField.stylingTextField()
     searchCountriesTextField.setView(image: UIImage(systemName: "magnifyingglass") ?? UIImage())
-    searchCountriesTextField.customizedPlaceholder()
-    
-    LocationManager.shared.onLocationUpdate = { coordinates in
-      LocationManager.shared.getCountryCode(from: coordinates.latitude, longitude: coordinates.longitude) { countryCode in
-        if let code = countryCode {
-          UserDefaults.standard.set(code, forKey: "countryCode")
-          self.viewModel.getCountries()
-        } else {
-          print("Failed to get country code")
-        }
-      }
-    }
-    
-    LocationManager.shared.onAuthorizationChange = { status in
-      switch status {
-      case .authorizedWhenInUse, .authorizedAlways:
-        print("Location access authorized")
-      case .denied, .restricted:
-        print("Location access denied")
-        if let countryCode = Locale.current.region?.identifier {
-          
-          UserDefaults.standard.set(countryCode, forKey: "countryCode")
-          self.viewModel.getCountries()
-          print("Device Country Code Home: \(countryCode)")
-        }
-      case .notDetermined:
-        print("Location access not determined")
-      @unknown default:
-        print("Unexpected authorization status")
-      }
-    }
-    LocationManager.shared.requestLocationPermission()
-    
-    addedCountriesCollectionView.delegate = self
-    addedCountriesCollectionView.dataSource = self
-    let nib = UINib(nibName: "CountriesCollectionViewCell", bundle: nil)
-    addedCountriesCollectionView.register(nib, forCellWithReuseIdentifier: "countries")
-    
-    let nib1 = UINib(nibName: "CountryTableViewCell", bundle: nil)
-    countriesTableView.register(nib1, forCellReuseIdentifier: "country")
-    countriesTableView.dataSource = self
-    countriesTableView.delegate = self
-    countriesTableView.isHidden = true
-    dismissSearchButton.isHidden = true
     hideKeyboardWhenTappedAround()
   }
+  
+  private func setupTableView() {
+    let nib = UINib(nibName: "CountryTableViewCell", bundle: nil)
+    countriesTableView.register(nib, forCellReuseIdentifier: "country")
+    countriesTableView.delegate = self
+    countriesTableView.dataSource = self
+  }
+  
+  private func setupCollectionView() {
+    let nib = UINib(nibName: "CountriesCollectionViewCell", bundle: nil)
+    addedCountriesCollectionView.register(nib, forCellWithReuseIdentifier: "countries")
+    addedCountriesCollectionView.delegate = self
+    addedCountriesCollectionView.dataSource = self
+  }
+  
+  private func setupLocationManager() {
+    LocationManager.shared.onLocationUpdate = { [weak self] coordinates in
+      self?.viewModel.fetchCountryCode(from: coordinates)
+    }
+    
+    LocationManager.shared.onAuthorizationChange = { [weak self] status in
+      self?.viewModel.handleLocationAuthorization(status: status)
+    }
+    
+    LocationManager.shared.requestLocationPermission()
+  }
+  
+  private func updateUIVisibility() {
+    countriesTableView.isHidden = true
+    dismissSearchButton.isHidden = true
+    addedCountriesCollectionView.isHidden = false
+  }
 }
-
 //MARK: - IBActions
 private extension HomeViewController {
   @IBAction func searchTextFieldTapped(_ sender: UITextField) {
@@ -132,24 +126,24 @@ private extension HomeViewController {
   }
   
   @IBAction func dismissTapped(_ sender: UIButton) {
-    countriesTableView.isHidden = true
-    addedCountriesCollectionView.isHidden = false
-    dismissSearchButton.isHidden = true
+    updateUIVisibility()
   }
 }
 
 //MARK: - UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout
 extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout  {
   func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-    return addedCountries.count
+    return viewModel.getAddedCountriesCount()
   }
   
   func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     let cell  = collectionView.dequeueReusableCell(withReuseIdentifier: "countries", for: indexPath) as! CountriesCollectionViewCell
-    cell.configureCell(image: addedCountries[indexPath.row].flags?.png ?? "", name: addedCountries[indexPath.row].name ?? "", indexPath: indexPath.row)
+    let image = viewModel.getCountriesImage(index: indexPath.row)
+    let name = viewModel.getCountriesName(index: indexPath.row)
+    cell.configureCell(image: image, name: name, indexPath: indexPath.row)
     cell.deleteTapped = { [weak self] in
       self?.showAlert(on: self, title: "Are you sure?", subTitle: "are you sure you want to unpin this country") { _ in
-        self?.addedCountries.remove(at: indexPath.row)
+        self?.viewModel.addedCountries.remove(at: indexPath.row)
         self?.addedCountriesCollectionView.reloadData()
       }
     }
@@ -167,37 +161,40 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
   }
 }
 
-
 //MARK: - UITableViewDelegate, UITableViewDataSource
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    return filteredCountries.count
+    return viewModel.getCountriesCount() 
   }
   
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     let cell = tableView.dequeueReusableCell(withIdentifier: "country", for: indexPath) as! CountryTableViewCell
-    cell.configure(image: filteredCountries[indexPath.row].flags?.png ?? "", name: filteredCountries[indexPath.row].name ?? "")
+    let image = viewModel.getFilteredCountriesImage(index: indexPath.row)
+    let name = viewModel.getFilteredCountriesName(index: indexPath.row)
+    cell.configure(image: image, name: name)
     return cell
   }
   
   func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-      let country = filteredCountries[indexPath.row]
+    if viewModel.isOffline == false {
+      let country = viewModel.filteredCountries[indexPath.row]
       let countryDetails = UIHostingController(rootView: CountryDetailsView(
-          country: country,
-          onAddCountry: { [weak self] newCountry in
-            if (self?.addedCountries.contains(where: { $0.name == newCountry.name }) ?? false) {
-                print("Country already added")
+        country: country,
+        onAddCountry: { [weak self] newCountry in
+          if (self?.viewModel.addedCountries.contains(where: { $0.name == newCountry.name }) ?? false) {
+            print("Country already added")
+          }else {
+            if self?.viewModel.addedCountries.count ?? 0 == 5 {
+              print("Exceeded Limit")
             }else {
-              if self?.addedCountries.count ?? 0 == 5 {
-                print("Exceeded Limit")
-              }else {
-                self?.addedCountries.append(newCountry)
-                self?.addedCountriesCollectionView.reloadData()
-              }
+              self?.viewModel.addedCountries.append(newCountry)
+              self?.addedCountriesCollectionView.reloadData()
             }
           }
+        }
       ))
       navigationController?.pushViewController(countryDetails, animated: true)
+    }
   }
 
   func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -217,19 +214,9 @@ extension HomeViewController: UITextFieldDelegate {
     let currentText = textField.text ?? ""
     let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
     
-    filteredCountries.removeAll()
-    
-    if updatedText.isEmpty {
-      filteredCountries = viewModel.retrievedCountries ?? []
-    }else {
-      for country in viewModel.retrievedCountries ?? [] {
-        let name = country.name ?? ""
-        if name.uppercased().contains(updatedText.uppercased()) {
-          filteredCountries.append(country)
-        }
-      }
-    }
+    viewModel.updateFilteredCountries(with: updatedText)
     countriesTableView.reloadData()
+    
     return true
   }
 }

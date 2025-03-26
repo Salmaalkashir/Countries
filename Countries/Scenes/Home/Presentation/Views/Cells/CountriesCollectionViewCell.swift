@@ -26,10 +26,11 @@ class CountriesCollectionViewCell: UICollectionViewCell {
   @IBAction func deleteCountry(_ sender: UIButton) {
     deleteTapped?()
   }
-  
+
   func configureCell(image: String, name: String, indexPath: Int) {
-    countryName.text = name
-    countryImage.sd_setImage(with: URL(string: image))
-    deleteButton.isHidden = indexPath == 0 ? true : false
+      countryName.text = name
+      countryImage.sd_setImage(with: URL(string: image), placeholderImage: UIImage(named: "placeholder"))
+      deleteButton.isHidden = (indexPath == 0)
   }
+
 }

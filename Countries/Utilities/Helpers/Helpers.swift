@@ -6,6 +6,8 @@
 //
 
 import UIKit
+import SDWebImage
+
 class Helpers {
   static func showToastMessage(in view: UIView, message: String, color: UIColor, x: CGFloat, y: CGFloat, labelHeight: CGFloat, labelWidth: CGFloat, textColor: UIColor) {
     let toastLabel = UILabel(frame: CGRect(x: x, y: y, width: labelWidth, height: labelHeight))
@@ -28,26 +30,6 @@ class Helpers {
       toastLabel.alpha = 0.0
     }) { _ in
       toastLabel.removeFromSuperview()
-    }
-  }
-  
-  
-  static func convertStringToData(image: String, completion: @escaping (Data?) -> Void) {
-    if let url = URL(string: image) {
-      DispatchQueue.global(qos: .userInitiated).async {
-        do {
-          let data = try Data(contentsOf: url)
-          DispatchQueue.main.async {
-            completion(data)
-          }
-        } catch {
-          DispatchQueue.main.async {
-            completion(nil)
-          }
-        }
-      }
-    } else {
-      completion(nil)
     }
   }
 }
